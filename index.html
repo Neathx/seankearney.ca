@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sean Kearney — drone pilot and photographer</title>
+<meta name="description" content="Photographer that now takes photos in the sky. Sean Kearney flies drones for a living, based in Toronto.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky: #E9EFF3;      /* page */
+    --haze: #D3DEE6;     /* quiet fills */
+    --contour: #A7B9C7;  /* map lines */
+    --ink: #1C2633;      /* text */
+    --slate: #556577;    /* secondary text */
+    --hivis: #F0BE2C;    /* the one accent: aviation hi-vis */
+    --display: "Archivo", system-ui, sans-serif;
+    --body: "Newsreader", Georgia, serif;
+    --gutter: clamp(20px, 5vw, 72px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--sky);
+    color: var(--ink);
+    font: 400 1.125rem/1.6 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--hivis); text-decoration-thickness: 3px; }
+  :focus-visible { outline: 3px solid var(--hivis); outline-offset: 3px; }
+
+  /* ---------- top bar ---------- */
+  .bar {
+    position: absolute; inset: 0 0 auto 0; z-index: 2;
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 24px var(--gutter);
+    font-family: var(--display); font-size: 0.95rem;
+  }
+  .bar .home { font-weight: 700; text-decoration: none; }
+  .bar nav { display: flex; gap: clamp(14px, 3vw, 32px); }
+  .bar nav a { text-decoration: none; }
+  .bar nav a:hover { text-decoration: underline; text-decoration-color: var(--hivis); text-decoration-thickness: 3px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; min-height: min(92vh, 860px);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 120px var(--gutter) clamp(40px, 7vh, 80px);
+    overflow: hidden;
+  }
+  #terrain { position: absolute; inset: 0; width: 100%; height: 100%; }
+  @media (prefers-reduced-motion: no-preference) {
+    #terrain { animation: survey 2.2s cubic-bezier(.6,0,.2,1) both; }
+    @keyframes survey { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  }
+  .hero h1 {
+    position: relative; margin: 0;
+    font-family: var(--display); font-weight: 800;
+    font-size: clamp(3.4rem, 13.5vw, 12.5rem);
+    line-height: 0.86; letter-spacing: -0.02em;
+    font-variation-settings: "wdth" 125;
+  }
+  .hero h1 span { display: block; }
+  .hero h1 span + span { padding-left: 0.62em; }
+  .hero .intro {
+    position: relative; max-width: 34ch; margin: clamp(24px, 4vh, 40px) 0 0;
+    font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.45;
+    text-shadow: 0 0 6px var(--sky), 0 0 12px var(--sky), 0 0 18px var(--sky);
+  }
+  /* ---------- drone ---------- */
+  .drone, .drone-shadow {
+    position: absolute; left: 0; top: 0; z-index: 3;
+    width: clamp(64px, 8vw, 120px); aspect-ratio: 1;
+    margin: calc(clamp(64px, 8vw, 120px) / -2) 0 0 calc(clamp(64px, 8vw, 120px) / -2);
+    opacity: 0; will-change: transform;
+  }
+  .drone { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .drone-shadow { z-index: 1; pointer-events: none; filter: blur(3px); }
+  .drone-shadow * { fill: #1C2633 !important; stroke: none !important; }
+  .drone-shadow .prop-blur { opacity: .35; }
+  .drone svg, .drone-shadow svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .drone .prop { transform-box: fill-box; transform-origin: center; }
+  @media (prefers-reduced-motion: no-preference) {
+    .drone .prop { animation: spin .16s linear infinite; }
+    .drone .prop.ccw { animation-direction: reverse; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  }
+  .drone .led { animation: led 1.1s steps(2, jump-none) infinite; }
+  @keyframes led { 50% { opacity: .25; } }
+
+  .marker {
+    position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--hivis); box-shadow: 0 0 0 5px rgba(240,190,44,.28);
+    transform: translate(-50%, -50%); opacity: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .marker.on { animation: land .5s 2s ease-out forwards; }
+    @keyframes land { from { opacity: 0; transform: translate(-50%,-50%) scale(2.4); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  }
+  @media (prefers-reduced-motion: reduce) { .marker.on { opacity: 1; } }
+
+  /* ---------- sections ---------- */
+  section { padding: clamp(64px, 10vh, 112px) var(--gutter) 0; }
+  h2 {
+    margin: 0 0 12px;
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.05;
+    font-variation-settings: "wdth" 112;
+  }
+  .lede { max-width: 58ch; color: var(--slate); margin: 0; }
+
+
+  /* ---------- viewfinder mosaic ---------- */
+  .vf { padding: clamp(48px, 8vh, 96px) 10px 0; overflow-x: clip; }
+  @media (max-width: 760px) { .vf { padding-left: 8px; padding-right: 8px; } }
+  .mosaic-wrap { position: relative; }
+  .mosaic {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: clamp(150px, 17vw, 300px);
+    grid-auto-flow: dense;
+  }
+  .mosaic .tile { margin: 0; border-radius: 4px; overflow: hidden; background: var(--haze); }
+  .mosaic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .mosaic .tile { position: relative; }
+  .mosaic-wrap.mouse { cursor: none; }
+
+  /* The lens: a zoomed, slightly punchier copy of the mosaic, cut to the viewfinder. */
+  .lens { position: absolute; inset: 0; overflow: hidden; pointer-events: none; clip-path: inset(50% 50% 50% 50%); }
+  .lens .mosaic.live { position: absolute; inset: 0; filter: contrast(1.08) saturate(1.15); will-change: transform; }
+
+  .frame {
+    position: absolute; left: 0; top: 0; pointer-events: none; overflow: hidden; border-radius: 3px;
+    opacity: 0; transition: opacity .25s;
+    font-family: var(--display); font-variation-settings: "wdth" 80; font-weight: 600;
+    font-size: var(--hud, 12px); line-height: 1; color: #fff; font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 2px rgba(0,0,0,.7);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.25), 0 20px 50px -20px rgba(0,0,0,.6);
+  }
+  .frame.on { opacity: 1; }
+  .frame .grid {
+    position: absolute; inset: 0; opacity: .35;
+    background:
+      linear-gradient(to right, transparent calc(33.33% - .5px), #fff calc(33.33% - .5px), #fff calc(33.33% + .5px), transparent calc(33.33% + .5px),
+                                transparent calc(66.66% - .5px), #fff calc(66.66% - .5px), #fff calc(66.66% + .5px), transparent calc(66.66% + .5px)),
+      linear-gradient(to bottom, transparent calc(33.33% - .5px), #fff calc(33.33% - .5px), #fff calc(33.33% + .5px), transparent calc(33.33% + .5px),
+                                 transparent calc(66.66% - .5px), #fff calc(66.66% - .5px), #fff calc(66.66% + .5px), transparent calc(66.66% + .5px));
+  }
+  .frame b { position: absolute; width: 22px; height: 22px; border: 0 solid #fff; filter: drop-shadow(0 0 2px rgba(0,0,0,.6)); }
+  .frame b:nth-of-type(1) { left: 8px; top: 8px; border-width: 2px 0 0 2px; }
+  .frame b:nth-of-type(2) { right: 8px; top: 8px; border-width: 2px 2px 0 0; }
+  .frame b:nth-of-type(3) { left: 8px; bottom: 8px; border-width: 0 0 2px 2px; }
+  .frame b:nth-of-type(4) { right: 8px; bottom: 8px; border-width: 0 2px 2px 0; }
+  .frame .cross { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; }
+  .frame .cross::before, .frame .cross::after { content: ""; position: absolute; background: #fff; }
+  .frame .cross::before { left: 6px; top: 0; width: 2px; height: 14px; }
+  .frame .cross::after { top: 6px; left: 0; height: 2px; width: 14px; }
+  /* Focus box: loose and white while moving, snaps tight and hi-vis when it locks. */
+  .frame .focus {
+    position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px;
+    border: 1.5px solid rgba(255,255,255,.7); border-radius: 2px;
+    transition: transform .25s cubic-bezier(.3,1.6,.5,1), border-color .2s;
+  }
+  .frame.locked .focus { transform: scale(.72); border-color: var(--hivis); border-width: 2px; }
+  .frame .af { position: absolute; left: 50%; top: calc(50% + 34px); transform: translateX(-50%); font-size: .85em; opacity: 0; transition: opacity .2s; color: var(--hivis); }
+  .frame.locked .af { opacity: 1; }
+
+  .hud { position: absolute; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 0 38px; white-space: nowrap; }
+  .hud.top { top: 0; height: 34px; background: linear-gradient(rgba(0,0,0,.45), transparent); }
+  .hud.bottom { bottom: 0; height: 34px; background: linear-gradient(transparent, rgba(0,0,0,.45)); }
+  .hud .grp { display: flex; align-items: center; gap: 10px; }
+  .rec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #FF4B3E; margin-right: 5px; vertical-align: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .rec-dot { animation: blink 1s steps(2, jump-none) infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
+  }
+  .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
+  .bars i { width: 3px; background: #fff; border-radius: 1px; }
+  .bars i:nth-child(1) { height: 3px; } .bars i:nth-child(2) { height: 5px; } .bars i:nth-child(3) { height: 8px; } .bars i:nth-child(4) { height: 10px; opacity: .45; }
+  .batt { display: inline-block; position: relative; width: 20px; height: 10px; border: 1.5px solid #fff; border-radius: 2px; margin-right: 8px; vertical-align: -1px; }
+  .batt::after { content: ""; position: absolute; right: -4px; top: 2px; width: 2px; height: 3px; background: #fff; border-radius: 0 1px 1px 0; }
+  .batt i { position: absolute; left: 1px; top: 1px; bottom: 1px; background: #fff; border-radius: 1px; }
+  .hud .chip { padding: 2px 5px; border: 1px solid rgba(255,255,255,.8); border-radius: 3px; }
+  .side { position: absolute; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+  .side.left { left: 12px; } .side.right { right: 12px; align-items: flex-end; }
+  .side small { font-size: .78em; opacity: .75; font-weight: 500; }
+  .frame.compact .side, .frame.compact .hdg { display: none; }
+  .frame.narrow .hdg { display: none; }
+  .frame.narrow .hud { padding: 0 30px; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+  .flash.go { animation: flash .35s ease-out; }
+  @keyframes flash { from { opacity: .9; } to { opacity: 0; } }
+
+  @media (max-width: 760px) {
+    .mosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 34vw; gap: 8px; }
+    .mosaic .tile { grid-column: span 1 !important; grid-row: span 2 !important; }
+    .mosaic .tile.wide { grid-column: span 2 !important; grid-row: span 1 !important; }
+  }
+
+  /* ---------- albums slider ---------- */
+  .albums {
+    position: relative; margin-top: clamp(64px, 10vh, 112px);
+    padding: clamp(48px, 8vh, 88px) 0 clamp(40px, 7vh, 72px);
+    color: var(--sky);
+    background:
+      radial-gradient(90% 70% at 15% 0%, rgba(240,190,44,.10), transparent 60%),
+      radial-gradient(80% 90% at 100% 100%, rgba(85,101,119,.55), transparent 70%),
+      linear-gradient(180deg, #243142 0%, #1C2633 55%, #161E29 100%);
+    box-shadow: 0 -24px 60px -28px rgba(28,38,51,.55), 0 24px 60px -28px rgba(28,38,51,.55);
+  }
+  .albums .ah-meta, .albums .card .d { color: #A7B9C7; }
+  .albums .back, .albums .ah-nav button { border-color: rgba(233,239,243,.7); color: var(--sky); }
+  .albums .back:hover, .albums .ah-nav button:hover { background: var(--sky); color: var(--ink); }
+  .albums .card .cover, .albums .shot { background: #2B394A; box-shadow: 0 18px 40px -22px rgba(0,0,0,.7); }
+  .albums :focus-visible { outline-color: var(--hivis); }
+  .albums-head {
+    padding: 0 var(--gutter); margin-bottom: 18px;
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+  }
+  .albums-head h2 { margin: 0; }
+  .ah-meta { margin: 6px 0 0; color: var(--slate); }
+  .back {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px;
+    padding: 6px 14px 6px 9px; border: 1.5px solid var(--ink); border-radius: 999px;
+    background: none; color: var(--ink); font: 600 0.95rem var(--display); cursor: pointer;
+  }
+  .back:hover { background: var(--ink); color: var(--sky); }
+  .back[hidden] { display: none; }
+  .ah-nav { display: flex; gap: 8px; flex-shrink: 0; }
+  .ah-nav button {
+    width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--ink);
+    background: none; color: var(--ink); cursor: pointer; display: grid; place-items: center;
+  }
+  .ah-nav button:hover { background: var(--ink); color: var(--sky); }
+  .rail {
+    display: flex; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain;
+    padding: 4px var(--gutter) 24px; scroll-padding: 0 var(--gutter);
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+    cursor: grab; user-select: none; -webkit-user-select: none;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail.dragging { scroll-snap-type: none; cursor: grabbing; }
+  .rail img { -webkit-user-drag: none; }
+  .card {
+    flex: 0 0 auto; width: clamp(200px, 21vw, 300px); scroll-snap-align: start;
+    border: 0; padding: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  }
+  .card .cover { display: block; aspect-ratio: 4 / 5; border-radius: 4px; overflow: hidden; background: var(--haze); }
+  .card img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .card:hover img { transform: scale(1.04); }
+  .card .t { display: block; margin-top: 10px; font: 700 1.05rem/1.2 var(--display); }
+  .card .d { display: block; margin-top: 2px; color: var(--slate); font-size: 0.95rem; }
+  .shot {
+    flex: 0 0 auto; height: clamp(280px, 50vh, 500px); margin: 0; scroll-snap-align: start;
+    border-radius: 4px; overflow: hidden; background: var(--haze); cursor: zoom-in; min-width: 180px;
+  }
+  .shot img { display: block; height: 100%; width: auto; }
+  @media (max-width: 700px) {
+    .ah-nav { display: none; }
+    .card { width: 64vw; }
+    .shot { height: min(60vh, 420px); }
+  }
+
+  /* ---------- full-size view ---------- */
+  dialog.lightbox {
+    border: 0; padding: 0; background: transparent; max-width: 94vw; max-height: 92vh;
+  }
+  dialog.lightbox::backdrop { background: rgba(28,38,51,.88); }
+  dialog.lightbox img { display: block; max-width: 94vw; max-height: 88vh; border-radius: 4px; }
+  dialog.lightbox form { position: absolute; top: 10px; right: 10px; margin: 0; }
+  dialog.lightbox button {
+    font: 600 0.95rem var(--display); color: var(--ink); background: var(--sky);
+    border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer;
+  }
+  /* ---------- contact ---------- */
+  .contact { padding-bottom: clamp(64px, 10vh, 112px); }
+  .links { list-style: none; padding: 0; margin: 20px 0 0; display: flex; flex-wrap: wrap; gap: 8px clamp(24px, 4vw, 56px); }
+  .links a {
+    font-family: var(--display); font-weight: 700; font-variation-settings: "wdth" 112;
+    font-size: clamp(1.6rem, 4vw, 3rem); line-height: 1.2;
+  }
+
+  footer {
+    padding: 24px var(--gutter); border-top: 1px solid var(--contour);
+    color: var(--slate); font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="home" href="/">Sean Kearney</a>
+  <nav aria-label="Main">
+    <a href="#photos">Photos</a>
+    <a href="#albums">Albums</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="name">
+    <canvas id="terrain" aria-hidden="true"></canvas>
+    <div class="marker" id="marker" aria-hidden="true"></div>
+    <div class="drone-shadow" id="droneShadow" aria-hidden="true"></div>
+    <div class="drone" id="drone" aria-hidden="true">
+      <svg viewBox="-100 -100 200 200">
+        <!-- arms -->
+        <g stroke="#556577" stroke-width="9" stroke-linecap="round">
+          <line x1="-58" y1="-58" x2="58" y2="58"/><line x1="58" y1="-58" x2="-58" y2="58"/>
+        </g>
+        <!-- motors and props: blurred disc plus one blade each -->
+        <g>
+          <circle class="prop-blur" cx="-58" cy="-58" r="36" fill="#A7B9C7" opacity=".35"/>
+          <circle class="prop-blur" cx="58" cy="-58" r="36" fill="#A7B9C7" opacity=".35"/>
+          <circle class="prop-blur" cx="-58" cy="58" r="36" fill="#A7B9C7" opacity=".35"/>
+          <circle class="prop-blur" cx="58" cy="58" r="36" fill="#A7B9C7" opacity=".35"/>
+          <g class="prop"><rect x="-94" y="-61" width="72" height="6" rx="3" fill="#1C2633" opacity=".55"/></g>
+          <g class="prop ccw"><rect x="22" y="-61" width="72" height="6" rx="3" fill="#1C2633" opacity=".55"/></g>
+          <g class="prop ccw"><rect x="-94" y="55" width="72" height="6" rx="3" fill="#1C2633" opacity=".55"/></g>
+          <g class="prop"><rect x="22" y="55" width="72" height="6" rx="3" fill="#1C2633" opacity=".55"/></g>
+          <circle cx="-58" cy="-58" r="10" fill="#1C2633"/><circle cx="58" cy="-58" r="10" fill="#1C2633"/>
+          <circle cx="-58" cy="58" r="10" fill="#1C2633"/><circle cx="58" cy="58" r="10" fill="#1C2633"/>
+        </g>
+        <!-- body, camera at the nose (pointing up = forward) -->
+        <rect x="-24" y="-34" width="48" height="68" rx="16" fill="#1C2633"/>
+        <rect x="-15" y="-22" width="30" height="34" rx="8" fill="#556577"/>
+        <circle cx="0" cy="-42" r="9" fill="#1C2633"/>
+        <circle cx="0" cy="-42" r="4.5" fill="#A7B9C7"/>
+        <circle class="led" cx="0" cy="26" r="4" fill="#F0BE2C"/>
+      </svg>
+    </div>
+    <h1 id="name"><span>Sean</span><span>Kearney</span></h1>
+    <p class="intro">Photographer that now takes photos in the sky. I fly drones for a living. Based in Toronto.</p>
+  </section>
+
+  <section id="photos" class="vf" aria-label="Photos">
+    <div class="mosaic-wrap" id="vfWrap">
+      <div class="mosaic base" id="base"></div>
+      <div class="lens" id="lens" aria-hidden="true"><div class="mosaic live" id="live"></div></div>
+      <div class="frame" id="frame" aria-hidden="true">
+        <span class="grid"></span>
+        <b></b><b></b><b></b><b></b>
+        <span class="focus"></span><span class="cross"></span><span class="af">AF</span>
+        <div class="hud top">
+          <span><span class="rec-dot"></span>REC <span id="tc">00:00:00:00</span></span>
+          <span class="hdg" id="hdg">HDG 000°</span>
+          <span class="grp"><span class="bars"><i></i><i></i><i></i><i></i></span><span id="sat">GPS 18</span><span><span class="batt"><i id="battFill"></i></span><span id="batt">87%</span></span></span>
+        </div>
+        <div class="side left"><small>Height</small><span id="alt">120.0 m</span></div>
+        <div class="side right"><small>Distance</small><span id="dist">0 m</span></div>
+        <div class="hud bottom">
+          <span class="grp" id="expo"></span>
+          <span class="grp"><span id="zoom">1.3×</span><span class="chip">4K 30</span></span>
+        </div>
+        <span class="flash" id="flash"></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="albums" class="albums" aria-labelledby="albumsTitle">
+    <div class="albums-head">
+      <div>
+        <button class="back" id="albumsBack" hidden>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          All albums
+        </button>
+        <h2 id="albumsTitle">Albums</h2>
+        <p class="ah-meta" id="albumsMeta"></p>
+      </div>
+      <div class="ah-nav">
+        <button id="railPrev" aria-label="Scroll left"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button id="railNext" aria-label="Scroll right"><svg width="18" height="18" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+    </div>
+    <div class="rail" id="rail" aria-live="polite"></div>
+  </section>
+
+  <section id="contact" class="contact">
+    <h2>Find me</h2>
+    <ul class="links">
+      <li><a href="https://github.com/Neathx">GitHub</a></li>
+      <li><a href="https://www.instagram.com/seankearne/">Instagram</a></li>
+      <li><a href="https://www.linkedin.com/in/sean-kearney-225b21214/">LinkedIn</a></li>
+    </ul>
+  </section>
+</main>
+
+<footer>© 2026 Sean Kearney</footer>
+
+
+<dialog class="lightbox" id="lightbox">
+  <img alt="">
+  <form method="dialog"><button>Close</button></form>
+</dialog>
+<script>
+
+/* ======================================================================
+   PHOTOS — put your pictures in a "photos" folder next to this file and
+   list them here. "cam" is the camera readout shown in the viewfinder when it
+   is over that photo (any short labels work). The first one is the wide banner across the top, so a wide
+   or panoramic shot works best there. "alt" is a short description for
+   screen readers and search engines, e.g. "Festival crowd at Electric Island".
+   Missing files are replaced by generated placeholder landscapes.
+   ====================================================================== */
+const PHOTOS = [
+  { cam: ["ISO 100", "1/1000", "f/2.8", "EV 0"], src: "photos/01.jpg", alt: "Drone view of wind turbines stretching across green hills under a sky full of clouds" },
+  { cam: ["ISO 50", "1/2000", "f/1.7", "EV 0"], src: "photos/02.jpg", alt: "A drone pilot in a hard hat and safety vest flying a large drone beside a wind turbine" },
+  { cam: ["ISO 400", "1/250", "f/4.0", "EV -0.3"], src: "photos/03.jpg", alt: "A distant wind turbine reflected in a car's side mirror on a dusty forest road" },
+  { cam: ["ISO 250", "1/800", "f/8.0", "EV +0.7"], src: "photos/04.jpg", alt: "Wind turbines over a golden prairie field under a clear blue sky" },
+  { cam: ["IR", "Ironbow", "-20 to 150°C"], src: "photos/05.jpg", alt: "Thermal drone map of a building's roof laid over a satellite view, warm spots glowing orange" },
+];
+
+/* Placeholder landscapes, only used until real photos are added. */
+function placeholder(i) {
+  const W = 1200, H = 800, c = document.createElement('canvas');
+  c.width = W; c.height = H; const g = c.getContext('2d');
+  let s = (i + 1) * 9973;
+  const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  const skies = [
+    ['#1d2b4f', '#e9765b', '#f6c27a'], ['#6aa6d8', '#bfe0f2', '#f4f1e6'],
+    ['#0f1024', '#3b2a6b', '#d9558f'], ['#8fb3c9', '#d7e3ea', '#f2efe8'],
+    ['#22313f', '#4d6e8a', '#a9c3d4'], ['#2a1b3d', '#a34a6e', '#ffb36b'],
+  ];
+  const lands = [['#2d3a4a', '#1c2633'], ['#3e5a4a', '#24352b'], ['#4a3a5a', '#211833'], ['#5b6f7d', '#33434f']];
+  const sky = skies[i % skies.length], land = lands[i % lands.length];
+  const grd = g.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, sky[0]); grd.addColorStop(0.6, sky[1]); grd.addColorStop(1, sky[2]);
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(255,240,210,.85)';
+  g.beginPath(); g.arc(W * (0.2 + r() * 0.6), H * (0.25 + r() * 0.25), 30 + r() * 40, 0, 7); g.fill();
+  for (let layer = 0; layer < 3; layer++) {
+    const base = H * (0.55 + layer * 0.14);
+    g.fillStyle = layer === 2 ? land[1] : land[0];
+    g.globalAlpha = 0.45 + layer * 0.27;
+    g.beginPath(); g.moveTo(0, H);
+    let y = base - r() * 120;
+    for (let x = 0; x <= W; x += 40) { y += (r() - 0.5) * 70; y = Math.min(Math.max(y, base - 220), base + 40); g.lineTo(x, y); }
+    g.lineTo(W, H); g.closePath(); g.fill();
+  }
+  g.globalAlpha = 1;
+  return c.toDataURL('image/jpeg', 0.85);
+}
+
+/* Resolves every photo to a usable src (the real file, or a placeholder). */
+function loadPhotos() {
+  return Promise.all(PHOTOS.map((p, i) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => res({ ...p, src: p.src, w: im.naturalWidth, h: im.naturalHeight });
+    im.onerror = () => res({ ...p, src: placeholder(i), w: 1200, h: 800 });
+    im.src = p.src;
+  })));
+}
+/* ---------- hero terrain ---------- */
+(() => {
+  const canvas = document.getElementById('terrain');
+  const marker = document.getElementById('marker');
+  const ctx = canvas.getContext('2d');
+
+  function rng(seed) {
+    return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+
+  function draw() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const r = rng(43);
+    const hills = [];
+    for (let i = 0; i < 7; i++) {
+      hills.push({ x: (0.35 + r() * 0.75) * w, y: (-0.1 + r() * 0.85) * h,
+                   s: (0.1 + r() * 0.2) * Math.max(w, h), a: 0.5 + r() * 0.8 });
+    }
+    const peak = hills.reduce((a, b) => (b.a > a.a ? b : a));
+    const f = (x, y) => {
+      let v = 0;
+      for (const p of hills) { const dx = x - p.x, dy = y - p.y; v += p.a * Math.exp(-(dx*dx + dy*dy) / (2 * p.s * p.s)); }
+      return v + 0.08 * Math.sin(x / 90 + y / 140) + 0.06 * Math.cos(y / 70 - x / 210);
+    };
+
+    const step = w < 700 ? 6 : 8;
+    const cols = Math.ceil(w / step) + 1, rows = Math.ceil(h / step) + 1;
+    const g = new Float32Array(cols * rows);
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) g[j * cols + i] = f(i * step, j * step);
+
+    const css = getComputedStyle(document.documentElement);
+    const light = css.getPropertyValue('--contour').trim();
+    const dark = css.getPropertyValue('--slate').trim();
+    const lerp = (a, b, L) => (L - a) / (b - a);
+
+    for (let k = 1; k < 26; k++) {
+      const L = k * 0.075;
+      const index = k % 5 === 0;
+      ctx.strokeStyle = index ? dark : light;
+      ctx.lineWidth = index ? 1.3 : 0.8;
+      ctx.beginPath();
+      for (let j = 0; j < rows - 1; j++) for (let i = 0; i < cols - 1; i++) {
+        const a = g[j*cols+i], b = g[j*cols+i+1], c = g[(j+1)*cols+i+1], d = g[(j+1)*cols+i];
+        const x = i * step, y = j * step;
+        const pts = [];
+        if ((a < L) !== (b < L)) pts.push([x + step * lerp(a, b, L), y]);
+        if ((b < L) !== (c < L)) pts.push([x + step, y + step * lerp(b, c, L)]);
+        if ((d < L) !== (c < L)) pts.push([x + step * lerp(d, c, L), y + step]);
+        if ((a < L) !== (d < L)) pts.push([x, y + step * lerp(a, d, L)]);
+        if (pts.length >= 2) { ctx.moveTo(pts[0][0], pts[0][1]); ctx.lineTo(pts[1][0], pts[1][1]); }
+        if (pts.length === 4) { ctx.moveTo(pts[2][0], pts[2][1]); ctx.lineTo(pts[3][0], pts[3][1]); }
+      }
+      ctx.stroke();
+    }
+
+    marker.style.left = Math.min(Math.max(peak.x, 24), w - 24) + 'px';
+    marker.style.top = Math.min(Math.max(peak.y, 90), h - 24) + 'px';
+    marker.classList.add('on');
+  }
+
+  draw();
+  let t; window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(draw, 150); });
+})();
+
+
+const lightbox = document.getElementById('lightbox');
+function openPhoto(p) {
+  const img = lightbox.querySelector('img'); img.src = p.src; img.alt = p.alt || '';
+  lightbox.showModal();
+}
+lightbox.addEventListener('click', e => { if (e.target === lightbox) lightbox.close(); });
+
+/* ---------- drone fly-in ---------- */
+(() => {
+  const hero = document.querySelector('.hero');
+  const marker = document.getElementById('marker');
+  const drone = document.getElementById('drone'), shadow = document.getElementById('droneShadow');
+  shadow.innerHTML = drone.innerHTML;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const home = () => [parseFloat(marker.style.left) || hero.clientWidth * 0.6, parseFloat(marker.style.top) || hero.clientHeight * 0.45];
+  const bez = (a, b, c, d, t) => { const u = 1 - t; return u*u*u*a + 3*u*u*t*b + 3*u*t*t*c + t*t*t*d; };
+  const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+  let flight = null, heading = 0, x = 0, y = 0, alt = 0.35;
+  const HOVER_ALT = 0.35;
+
+  // Flight 1: in from the left, low across the name, up and round to the landing marker.
+  function flyIn() {
+    const W = hero.clientWidth, H = hero.clientHeight, [mx, my] = home();
+    flight = { t0: performance.now(), dur: 5200,
+      px: [-0.12 * W, 0.42 * W, 0.98 * W, mx], py: [0.70 * H, 0.86 * H, 0.70 * H, my], alt: [1, HOVER_ALT] };
+  }
+  // Click the drone: one big lap around the page, then back to the marker.
+  function lap() {
+    if (flight) return;
+    const W = hero.clientWidth, H = hero.clientHeight, [mx, my] = home();
+    flight = { t0: performance.now(), dur: 4600,
+      px: [x, W * 1.15, -W * 0.25, mx], py: [y, H * 0.05, H * 0.95, my], alt: [alt, HOVER_ALT], climb: true };
+  }
+
+  function place(nx, ny, a, hdg) {
+    const lift = a * 46;                                  // higher = further from its shadow
+    const sc = 0.82 + a * 0.3;
+    drone.style.transform = `translate(${nx}px, ${ny - lift}px) rotate(${hdg}deg) scale(${sc})`;
+    shadow.style.transform = `translate(${nx + lift * 0.55}px, ${ny + lift * 0.25}px) rotate(${hdg}deg) scale(${0.8 + a * 0.08})`;
+    shadow.style.opacity = (0.28 - a * 0.12).toFixed(3);
+  }
+
+  function frame(now) {
+    if (flight) {
+      const raw = Math.min(1, (now - flight.t0) / flight.dur), t = ease(raw);
+      const nx = bez(...flight.px, t), ny = bez(...flight.py, t);
+      const dx = nx - x, dy = ny - y;
+      if (dx * dx + dy * dy > 0.5) {
+        const target = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+        let d = ((target - heading + 540) % 360) - 180; heading += d * 0.2;
+      }
+      x = nx; y = ny;
+      const [a0, a1] = flight.alt;
+      alt = flight.climb ? a0 + (a1 - a0) * t + Math.sin(raw * Math.PI) * 0.6 : a0 + (a1 - a0) * t;
+      if (raw >= 1) flight = null;
+    } else {
+      const [mx, my] = home();
+      x += (mx - x) * 0.05; y += (my - y) * 0.05;
+      heading += ((((-12 - heading) + 540) % 360) - 180) * 0.03;
+      alt = HOVER_ALT + Math.sin(now / 700) * 0.04;
+      x += Math.sin(now / 1300) * 0.25;
+    }
+    place(x, y, alt, heading);
+    requestAnimationFrame(frame);
+  }
+
+  drone.addEventListener('click', lap);
+
+  if (reduced) {
+    const [mx, my] = home(); x = mx; y = my;
+    drone.style.opacity = 1; shadow.style.opacity = 0.24; place(x, y, HOVER_ALT, -12);
+    addEventListener('resize', () => { const [a, b] = home(); place(a, b, HOVER_ALT, -12); });
+    return;
+  }
+  // Take off once the map has drawn in.
+  setTimeout(() => {
+    flyIn(); x = flight.px[0]; y = flight.py[0];
+    drone.style.opacity = 1; requestAnimationFrame(frame);
+  }, 900);
+})();
+
+/* ---------- viewfinder mosaic ---------- */
+(async () => {
+  const wrap = document.getElementById('vfWrap');
+  const base = document.getElementById('base'), live = document.getElementById('live'), lens = document.getElementById('lens');
+  const $ = id => document.getElementById(id);
+  const ZOOM = 1.3;
+  const frame = document.getElementById('frame'), flash = document.getElementById('flash');
+  const photos = await loadPhotos();
+  const touch = matchMedia('(hover: none)').matches;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Column/row spans for a varied mosaic on a 6-column grid. Repeats if there are more photos.
+  // First photo: full-width banner. The next four sit in a row underneath.
+  const SPANS = [[4,2],[1,2],[1,2],[1,2],[1,2]];
+  [base, live].forEach((grid, layer) => photos.forEach((p, i) => {
+    const [c, r] = SPANS[i % SPANS.length];
+    const fig = document.createElement('figure');
+    fig.className = 'tile' + (c >= 3 ? ' wide' : '');
+    fig.style.gridColumn = 'span ' + c; fig.style.gridRow = 'span ' + r;
+    fig.dataset.i = i;
+    const img = new Image(); img.src = p.src; img.alt = layer ? '' : p.alt; img.draggable = false;
+    fig.appendChild(img); grid.appendChild(fig);
+    if (!layer) {                      // keyboard and screen-reader access to each photo
+      fig.tabIndex = 0; fig.setAttribute('role', 'button'); fig.setAttribute('aria-label', 'Open photo ' + (i + 1));
+      fig.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPhoto(p); } });
+      fig.addEventListener('focus', () => { const r = fig.getBoundingClientRect(), w = wrap.getBoundingClientRect(); target(r.left - w.left + r.width / 2, r.top - w.top + r.height / 2, true); });
+    }
+  }));
+
+  let fw = 0, fh = 0;
+  function sizeFrame() {
+    fw = Math.max(240, Math.min(wrap.clientWidth * (touch ? 0.9 : 0.34), 520));
+    fh = fw * (2 / 3);
+    frame.style.width = fw + 'px'; frame.style.height = fh + 'px';
+    frame.style.setProperty('--hud', (fw < 330 ? 10 : fw < 420 ? 11 : 12.5) + 'px');
+    frame.classList.toggle('compact', fw < 330);
+    frame.classList.toggle('narrow', fw < 400);
+  }
+
+  // The frame eases toward the pointer like a gimbal settling.
+  let tx = 0, ty = 0, x = 0, y = 0, shown = false, ease = 0.16, surveying = false, surveyTimer;
+  function target(nx, ny, snap) {
+    tx = Math.min(Math.max(nx, fw / 2), wrap.clientWidth - fw / 2);
+    ty = Math.min(Math.max(ny, fh / 2), wrap.clientHeight - fh / 2);
+    if (!shown || snap || reduced) { x = tx; y = ty; }
+    shown = true; frame.classList.add('on');
+  }
+  function hide() { shown = false; frame.classList.remove('on'); lens.style.clipPath = 'inset(50% 50% 50% 50%)'; }
+
+  // Viewfinder readouts.
+  const t0 = performance.now();
+  const pad = n => String(n).padStart(2, '0');
+  let lastPhoto = -1, lastTxt = {};
+  const set = (id, v) => { if (lastTxt[id] !== v) { $(id).textContent = v; lastTxt[id] = v; } };
+  function hud(now) {
+    const s = (now - t0) / 1000, f = Math.floor((s % 1) * 30);
+    set('tc', `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(Math.floor(s) % 60)}:${pad(f)}`);
+    const W = wrap.clientWidth, H = wrap.clientHeight;
+    set('alt', `${(60 + (1 - y / H) * 80).toFixed(1)} m`);
+    set('dist', `${Math.round(Math.hypot(x - W / 2, y - H / 2) * 0.6)} m`);
+    set('hdg', `HDG ${pad(Math.round(290 + (x / W) * 100) % 360).padStart(3, '0')}°`);
+    const batt = Math.max(21, 87 - Math.floor(s / 45));
+    set('batt', batt + '%'); $('battFill').style.width = (batt * 0.16) + 'px';
+    set('sat', 'GPS ' + (17 + Math.round(Math.sin(s / 7) * 2)));
+    const w = wrap.getBoundingClientRect();
+    const hit = document.elementsFromPoint(w.left + x, w.top + y).find(el => el.closest && el.closest('#base .tile'));
+    const i = hit ? +hit.closest('.tile').dataset.i : -1;
+    if (i !== lastPhoto && i >= 0) {
+      lastPhoto = i;
+      $('expo').innerHTML = (photos[i].cam || []).map(c => `<span>${c}</span>`).join('');
+    }
+    frame.classList.toggle('locked', Math.abs(tx - x) + Math.abs(ty - y) < 1.5);
+  }
+
+  function tick(now) {
+    if (shown) {
+      x += (tx - x) * ease; y += (ty - y) * ease;
+      const W = wrap.clientWidth, H = wrap.clientHeight;
+      const l = x - fw / 2, t = y - fh / 2;
+      frame.style.transform = `translate(${l}px, ${t}px)`;
+      lens.style.clipPath = `inset(${t}px ${W - l - fw}px ${H - t - fh}px ${l}px round 3px)`;
+      // Digital zoom: magnify the copy around the centre of the frame.
+      live.style.transformOrigin = `${x}px ${y}px`;
+      live.style.transform = `scale(${ZOOM})`;
+      hud(now || performance.now());
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function photoAtFrame() {
+    const w = wrap.getBoundingClientRect();
+    const hit = document.elementsFromPoint(w.left + x, w.top + y).find(el => el.closest && el.closest('#base .tile'));
+    return hit ? photos[+hit.closest('.tile').dataset.i] : null;
+  }
+  function capture() {
+    const p = photoAtFrame(); if (!p) return;
+    flash.classList.remove('go'); void flash.offsetWidth; flash.classList.add('go');
+    setTimeout(() => openPhoto(p), reduced ? 0 : 220);
+  }
+
+  if (touch) {
+    // Phones: the frame sits in the middle of the screen and the mosaic scrolls under it.
+    const follow = () => {
+      const w = wrap.getBoundingClientRect();
+      const cy = innerHeight / 2 - w.top;
+      if (cy > -fh / 2 && cy < w.height + fh / 2) target(w.width / 2, cy, true); else hide();
+    };
+    addEventListener('scroll', follow, { passive: true });
+    wrap.addEventListener('click', capture);
+    follow();
+  } else {
+    wrap.classList.add('mouse');
+    // Until the visitor touches it, the frame slowly surveys the mosaic on its own.
+    const tiles = [...base.querySelectorAll('.tile')];
+    const centreOf = t => { const r = t.getBoundingClientRect(), w = wrap.getBoundingClientRect(); return [r.left - w.left + r.width / 2, r.top - w.top + r.height / 2]; };
+    let k = 0;
+    const survey = () => { k = (k + 1 + Math.floor(Math.random() * 3)) % tiles.length; const [cx, cy] = centreOf(tiles[k]); target(cx, cy); };
+    const startSurvey = () => {
+      surveying = true; ease = 0.035;
+      if (!reduced) { clearInterval(surveyTimer); surveyTimer = setInterval(survey, 2600); }
+    };
+    const stopSurvey = () => { surveying = false; ease = 0.16; clearInterval(surveyTimer); };
+    sizeFrame();
+    const [cx, cy] = centreOf(tiles[0]); target(cx, cy, true);
+    startSurvey();
+
+    wrap.addEventListener('pointermove', e => {
+      if (surveying) stopSurvey();
+      const w = wrap.getBoundingClientRect(); target(e.clientX - w.left, e.clientY - w.top);
+    });
+    // When the pointer leaves, the frame stays put, then resumes surveying after a pause.
+    let resume;
+    wrap.addEventListener('pointerleave', () => { clearTimeout(resume); resume = setTimeout(startSurvey, 4000); });
+    wrap.addEventListener('pointerenter', () => clearTimeout(resume));
+    wrap.addEventListener('click', capture);
+  }
+
+  sizeFrame();
+  addEventListener('resize', sizeFrame);
+  requestAnimationFrame(tick);
+})();
+
+/* ======================================================================
+   ALBUMS — photos load from your Behance projects (behance.net/kearn).
+   Each album's "behance" is the project number from its Behance address;
+   its photo list is in BEHANCE_PHOTOS below, in Behance order (the first
+   one is the cover). Remove an album's line to hide it.
+   ====================================================================== */
+const SHOW_PLACEHOLDERS = false;
+const BEHANCE_CDN = "https://mir-s3-cdn-cf.behance.net/project_modules/";
+const ALBUMS = [
+  { title: "FMX", date: "Sept 2024", behance: "208718869" },
+  { title: "Electric Island", date: "Aug 2024", behance: "206994447" },
+  { title: "Jackalope", date: "July 2024", behance: "203233227" },
+  { title: "Future Proof / 24mm Collective", date: "June 2024", behance: "200564109" },
+  { title: "Electric Island", date: "May 2024", behance: "198911437" },
+  { title: "DOCD", date: "April 2024", behance: "200164623" },
+  { title: "Carl Cox, Summer Fest NYC", date: "Sept 2023", behance: "194511233" },
+  { title: "Surfing & Climbing, Vancouver Island", date: "Aug 2023", behance: "202099973" },
+  { title: "DOCD", date: "July 2023", behance: "175399169" },
+  { title: "DakhaBrakha, Sunfest", date: "July 2023", behance: "175100591" },
+  { title: "CRi, Electric Island", date: "July 2023", behance: "174480479" },
+  { title: "Lights", date: "June 2023", behance: "174186311" },
+  { title: "Legacy Car Meet", date: "2023", behance: "171778739" },
+  { title: "Electric Island", date: "June 2023", behance: "171536975" },
+  { title: "Electric Island B&W", date: "June 2023", behance: "171536179" },
+  { title: "Canabliss @ CODA", date: "Feb 2023", behance: "164995567" },
+  { title: "Portraits, Toronto in January", date: "Jan 2023", behance: "164994811" },
+  { title: "London Airshow", date: "Sept 2022", behance: "152606861" },
+  { title: "Gumball 3000, Dundas Square", date: "2022", behance: "144848173" },
+  { title: "Climbing (Vol I)", date: "2021", behance: "127660121" },
+  { title: "Favorites", date: "2022", behance: "140204197" },
+  { title: "Ukraine Rally in London", date: "2022", behance: "138351105" },
+  { title: "Harina @ Covent Garden Market", date: "Feb 2022", behance: "137454193" },
+  { title: "Street Photography", date: "Jan 2022", behance: "135242797" },
+  { title: "Iceland", date: "2018", behance: "72161111" },
+  { title: "CH I: Lake Louise", date: "2017", behance: "59237541" },
+  { title: "CH II: Banff", date: "2018", behance: "61394241" },
+  { title: "CH III: BC", date: "2018", behance: "61410731" },
+  { title: "CH IV: Skoki", date: "2018", behance: "61525047" },
+];
+const BEHANCE_PHOTOS = {"59237541":["663a9659237541.5a7032f8c22c3.jpg","11723559237541.5a6d2ed9a3074.jpg","69991959237541.5a70337db9a9e.jpg","493be159237541.5a70356b2d888.jpg","cd5a3e59237541.5a6e2b4c90088.jpg","83366159237541.5a70368d79525.jpg","19a57a59237541.5a70368d79029.jpg","e9d4db59237541.5a6d2ed9a161e.jpg","02318159237541.5a6d2ed9a131f.jpg","fdca4159237541.5a6d2ed9a246c.jpg","22acbd59237541.5a6d2ed9a1d4f.jpg","3d0f3c59237541.5a6d2ed9a58a2.jpg","8cd9d859237541.5a6d2ed9a3c47.jpg","d7081359237541.5a6d2ed9a0674.jpg","e2e24259237541.5a6d2ed9a393d.jpg","230d7e59237541.5a6d2ed9a51c9.jpg","42fe1f59237541.5a6d2ed9a4714.jpg","592dea59237541.5a6d2ed9a5d78.jpg","3d818d59237541.5a6d2ed9a5584.jpg","8ff09659237541.5a6d2ed9a3573.jpg","372ee359237541.5a6d2ed9a4362.jpg","f14ba559237541.5a6d2ed9a64c7.jpg","7fd81059237541.5a6d2ed9a7162.jpg","49fe9259237541.5a6d2ed9a4e8f.jpg","1447e859237541.5a6d2ed9a0e4c.jpg","0a7ade59237541.5a6d2ed9a01b8.jpg"],"61394241":["9b1b6961394241.5a6d36d7ca1fe.png","eb487461394241.5a6d36d7c9e99.jpg","fce11461394241.5a6d36d7cb3de.jpg","9a36d261394241.5a6d36d7cc584.jpg","7a482661394241.5a6d36d7ccc2a.jpg","33b2a261394241.5a70befb433bb.jpg","f8201661394241.5a6d36d7c8e08.jpg","1ace5661394241.5a6d36d7ca844.jpg","555fcd61394241.5a6d36d7cd2b1.jpg","87100a61394241.5a6d36d7c8547.jpg","3281d161394241.5a6d36d7c97ec.jpg","b3838861394241.5a6d36d7cbbab.jpg","e9cfef61394241.5a70c0645b5c0.jpg","b2414761394241.5a70bfaee7a9f.jpg","87f50e61394241.5a6d36d7cc19a.jpg","d9dc3661394241.5a6d36d7c924c.jpg"],"61410731":["f4220361410731.5a6e07418fdf3.jpg","8d625261410731.5a6f56a8c4eb3.jpg","b0056f61410731.5a6f56a8c9fcf.jpg","5a0e1061410731.5a6f56a8c853c.jpg","da601a61410731.5a70c46f5a7c0.jpg","bc9f4561410731.5a70c46f5ab24.jpg","74d6f761410731.5a6f56a8c95be.jpg","b9c6e561410731.5a6f56a8c8bce.jpg","0c95eb61410731.5a6f56a8c6a36.jpg","43cfa061410731.5a70c354dca89.jpg","62373a61410731.5a70c2a02807c.jpg","6a53d661410731.5a6f56a8c6d9b.jpg","5a198461410731.5a6f56a8c993e.jpg","77d11c61410731.5a6f56a8c73f1.jpg","d02f4161410731.5a6f56a8c64eb.jpg","6f36f361410731.5a6f56a8c526d.jpg","eacd4361410731.5a6f56a8c602f.jpg"],"61525047":["d7e4ba61525047.5a715c99dcd53.png","f016d761525047.5a715c99de181.jpg","3d635e61525047.5a715c99da017.jpg","6418e261525047.5a715c99dbd7b.jpg","b49c4e61525047.5a715c99d9c32.jpg","7d346161525047.5a715c98be87e.jpg","b6401561525047.5a715c98be212.jpg","08788861525047.5a715c99dc783.jpg","f57a7e61525047.5a715c99dc283.jpg","6b80f661525047.5a715c99dada3.jpg","2f755861525047.5a715c99db808.jpg","38de2561525047.5a715c99dd53c.jpg","50b6a261525047.5a715c99da4e6.jpg","0fd26861525047.5a715c99dca88.jpg","b8fd0461525047.5a715c99dd915.jpg","d0952b61525047.5a715c99ddd59.jpg","e3e33c61525047.5a715c99dd135.jpg","229d8f61525047.5a715c99db2e8.jpg","2c990f61525047.5a715c99da8aa.jpg"],"72161111":["2718fe72161111.5bde13950b527.jpg","e9b30572161111.5bde139505a42.jpg","ad133d72161111.5bde13950bffc.jpg","320f2772161111.5bde139507476.jpg","c83b0772161111.5bde1395065f6.jpg","fffb1072161111.5bde13950a372.jpg","316b3b72161111.5bde139506b29.jpg","cf54fa72161111.5bde139508170.jpg","43dd8272161111.5bde139503e56.jpg","13ce2072161111.5bde139504dfe.jpg","b42db172161111.5bde139508b65.jpg","5c2ba672161111.5bde139506022.jpg","7063d472161111.5bde1395086b8.jpg","60ea9372161111.5bde139505270.jpg","7f783c72161111.5bde1395047c2.jpg","0eaa0b72161111.5bde1395038cd.jpg","e2fa2c72161111.5bde1395042d0.jpg","310bb172161111.5bde139509e98.jpg","67ee9b72161111.5bde13950aced.jpg","bcf0fc72161111.5bde139506fec.jpg","836aff72161111.5bde139507cce.jpg","052f5572161111.5bde1395099e0.jpg","83709272161111.5bde13950916b.jpg","4ed25972161111.5bde13950bb50.jpg","6bb13c72161111.5bde13950d5e9.jpg","3761c272161111.5bde13951050a.jpg","70689872161111.5bde13950da9d.jpg","34800572161111.5bde13950edcc.jpg","43c27572161111.5bde13950cfc9.jpg","37008072161111.5bde13950f410.jpg","41735072161111.5bde13950e55e.jpg","b4429472161111.5bde13950f8b5.jpg","e4105872161111.5bde13950c62b.jpg","01c91a72161111.5bde13950df2b.jpg","d0b14972161111.5bde13950fef5.jpg"],"127660121":["c7804e127660121.630255e7df461.jpg","de5371127660121.630255e7dfe49.jpg","cfad59127660121.630255e7de7d7.jpg","4f283d127660121.625ae5451cc80.jpg","e54dcc127660121.625ae5451c3a1.jpg","37af61127660121.625ae5451d425.jpg","947028127660121.6283ea654cbd5.jpg","1d1658127660121.6283ea654c440.jpg","3d8aec127660121.6283ea654bb00.jpg","a2d6a5127660121.6283ea65e30f9.jpg","b5be71127660121.6283ea65e297b.jpg","edfc28127660121.6283ea65e23b6.jpg"],"135242797":["f4c47d135242797.61e4beb569217.jpg","818446135242797.61e4beb569a13.jpg","15109d135242797.61e4beb56ac24.jpg"],"137454193":["5365cd137454193.620bb310265a3.jpg","8b0778137454193.620bb310273b3.jpg","507241137454193.620bb31026e41.jpg","4c47d0137454193.620bb31027c44.jpg","8ca845137454193.620bb31025cde.jpg"],"138351105":["65c942138351105.621c08f881ea0.jpg","8c1bbd138351105.621c08f882ca9.jpg","147a6e138351105.621c08f108bd9.jpg","5c0dce138351105.621c08f108292.jpg","6dd28c138351105.621c08f88342b.jpg","5ccdb8138351105.621c08f8826f4.jpg","de2a58138351105.621c08f19bc05.jpg","848da1138351105.621c08f19b23d.jpg","408566138351105.621c0cbb48e28.jpg","f669cb138351105.621c0cbb494cd.jpg","657eae138351105.621c08f8003df.jpg","4a217c138351105.621c08f7f399f.jpg"],"140204197":["e56b2a140204197.6273eaf3ebb7b.jpg","7945e0140204197.623d0f5b235e7.jpg","dd273e140204197.623d0f5b243f7.jpg","aa64ee140204197.623d0f5b24e77.jpg","ea189e140204197.623d0f5b23d5d.jpg","126a98140204197.6273eaf3ec5e0.jpg"],"144848173":["b411ea144848173.6294169a158a9.jpg","242ab9144848173.62941a6f1f475.jpg","20e95d144848173.62941a6e9e810.jpg","68bdbf144848173.62941a6e9e12b.jpg","e2d3be144848173.6294169949313.jpg","ee6153144848173.6294169949d1c.jpg","97e03b144848173.6294169a161af.jpg","eeca1a144848173.6294169a14fa3.jpg","8b608c144848173.62941a6f1e9a1.jpg"],"152606861":["239fb8152606861.63210dc4979e1.jpg","e67917152606861.63210dc49813a.jpg","555c10152606861.63210dc49726a.jpg","446e8a152606861.63210dc4ed341.jpg","4630c3152606861.63210dc557535.jpg","5b9d76152606861.63210dc556f68.jpg","9cc02e152606861.63210dc7a9b10.jpg","cd1f15152606861.63210dc7a8e90.jpg","32e3cd152606861.63210dc7a88c0.jpg","0deb2b152606861.63210dc7a82af.jpg","c2b7b1152606861.63210dc7aa11b.jpg","d16bf6152606861.63210dc7aa727.jpg","85ebd4152606861.63210dc5b25a7.jpg","18271b152606861.63210dc5b3071.jpg","711acc152606861.63210dc5b2b2c.jpg","0fdbe4152606861.63210dc7ab283.jpg","0f1530152606861.63210dc62760a.jpg","1f825d152606861.63210dc626633.jpg","53fa8b152606861.63210dc625e47.jpg","3ebd59152606861.63210dc626e0e.jpg","c12dc1152606861.63210dc7aacb1.jpg","0e9e73152606861.63210dc7a64b3.jpg","422028152606861.63210dc67d010.jpg","7c12f7152606861.63210dc67d587.jpg","d1cfc8152606861.63210dc7a7bcb.jpg","81d8d5152606861.63210dc6d477e.jpg","e3bdb1152606861.63210dc6d3fb6.jpg","53c722152606861.63210dc6d4f0e.jpg","dfdb19152606861.63210dc6d566e.jpg","d5ea8d152606861.63210dc6d37e4.jpg","9ba53e152606861.63210dc6d5e26.jpg","c06509152606861.63210dc7a7056.jpg","864e03152606861.63210dc7a9478.jpg","9648aa152606861.63210dc747109.jpg","8040b3152606861.63210dc74681d.jpg","282d1b152606861.63210dc7a6b00.jpg","ca3056152606861.63210dc7a7606.jpg"],"164994811":["bff287164994811.63ffd68a36420.jpg","9a93a9164994811.63ffd68a351ec.jpg","706298164994811.63ffd68b32ef9.jpg","6b3a03164994811.63ffd68b31a95.jpg","fccc81164994811.63ffd68b37179.jpg","732948164994811.63ffd68b35bde.jpg","9b1a28164994811.63ffd68b34765.jpg","ca4e3a164994811.63ffd71ee1e8e.jpg"],"164995567":["30295f164995567.6407613e8c0f6.jpg","38a342164995567.6407613e838ec.jpg","0fb412164995567.6407613e7fb03.jpg","c25e0d164995567.6407613e814c2.jpg","349d39164995567.6407613e8d5cf.jpg","c71a2f164995567.6407613e7cb54.jpg","2a57af164995567.6407613e8aa18.jpg","003898164995567.6407613e86a41.jpg","4f6ba8164995567.6407613b7727c.jpg","e65ffe164995567.6407613b78409.jpg","bfeb0a164995567.6407613e85139.jpg","3ddd3b164995567.6407613cbb05a.jpg","8f3c7c164995567.6407613cb9fc2.jpg","bd9b0c164995567.6407613e7b690.jpg"],"171536179":["6b5eca171536179.64701e88e834b.jpg","f5141f171536179.64701e88e93c1.jpg","5dea84171536179.64701e89cc01f.jpg","fd9cb8171536179.64701e89cd082.jpg","e6c25f171536179.64701e8b1f6b4.jpg","f9cb66171536179.64701e8b20d0e.jpg"],"171536975":["c19ea9171536975.6470243c515c5.jpg","fa6454171536975.647024395b5cf.jpg","e1fd5c171536975.647024395888e.jpg","4aa0a8171536975.647024395a08a.jpg","b8d844171536975.6470243c50203.jpg","eae8dd171536975.64702890e9f1d.jpg","8d8b92171536975.6470243c4dfcf.jpg","d1fba2171536975.6470243c4f09e.jpg"],"171778739":["bc385f171778739.647553a07b679.jpg","a6c527171778739.6474baed8f33c.jpg","61db66171778739.64756b3db1296.jpg","69d020171778739.6474baead11a3.jpg","8fcfd3171778739.6474baead244e.jpg","d5d448171778739.64756b3db049a.jpg","3bfc80171778739.64756b3dae705.jpg","b70429171778739.64756b3daf4b8.jpg"],"174186311":["44125f174186311.649d75094327e.jpg","7521be174186311.649d75093f2eb.jpg","371fa3174186311.649d75093db19.jpg","79aadb174186311.649d750942375.jpg","ba306d174186311.649d75093cc30.jpg","19f27c174186311.649d7509410f9.jpg","7bbf21174186311.649d75093bf5d.jpg","5bc722174186311.649d750940081.jpg","c96306174186311.649d75093e6d3.jpg"],"174480479":["b48590174480479.64a35fb077f92.jpg","820e46174480479.64a35fb081096.jpg","2d6428174480479.64a35fb07d598.jpg","7ddfe3174480479.64a35fb07f476.jpg","30232d174480479.64a35fb07648f.jpg","d2ad85174480479.64a35fb085fc6.jpg","98afde174480479.64a35faf65592.jpg","f1b6ff174480479.64a35faf6496e.jpg","d9a305174480479.64a35faf6393d.jpg","b551d0174480479.64a35faf66184.jpg","76d517174480479.64a35fb084726.jpg","08b3fd174480479.64a35fb07bbf7.jpg","3697c8174480479.64a35fb079e57.jpg","521f47174480479.64a35fb082ba8.jpg"],"175100591":["8ff9ce175100591.64add5659240f.jpg","aadc28175100591.64add565932b6.jpg","12fcb4175100591.64add565940c5.jpg","9f1511175100591.64add5659609d.jpg","30ce0d175100591.64add5659513f.jpg","ef8414175100591.64add5659726e.jpg","d3e948175100591.64add564ac9da.jpg","f707f6175100591.64add564ad68d.jpg"],"175399169":["66d445175399169.64b2e3bf29b37.jpg","992d31175399169.64b2e3bf2aaf0.jpg","393afd175399169.64b2e3bf29051.jpg"],"194511233":["c24863194511233.65fd122b8ba58.jpg","6d7482194511233.65fd122b89e18.jpg","a33898194511233.65fd122b8aadf.jpg","c4d49c194511233.65fd1232a39cf.jpg","717713194511233.65fd1374dcb89.jpg","e3c094194511233.65fd1374de1fd.jpg","e6ee23194511233.65fd1232a4683.jpg","45abe8194511233.65fd1232a5339.jpg","e7566e194511233.65fd1232a2cb1.jpg","8e6280194511233.65fd122dda02c.jpg","15874a194511233.65fd122dd81ac.jpg","38aa4d194511233.65fd12306d7f3.jpg"],"198911437":["776319198911437.6657b22f2ac67.jpg","323b8d198911437.6657b22f2b228.jpg","7400c2198911437.6657b2309db8a.jpg","2cf882198911437.6657b2309bdd5.jpg","ad7bf4198911437.6657b2309cdea.jpg","8a5f54198911437.6657b2309d49f.jpg","d7b152198911437.6657b2309c62c.jpg","585536198911437.6657b2309e250.jpg","181ca2198911437.6657b2309b6ad.jpg","a95d25198911437.6657b2342e9b2.jpg","208443198911437.6657b2342f3bf.jpg","4ce582198911437.6657b23429ad8.jpg","62d7c1198911437.6657b2342c873.jpg","62cc07198911437.6657b2342db8b.jpg","615af1198911437.6657b2342b3f6.jpg","f4ff66198911437.6657b23428ce3.jpg","3a0f62198911437.6657b2342d6dc.jpg","0767d8198911437.6657b2342e4f8.jpg","3146ef198911437.6657b234302de.jpg","58147b198911437.6657b2342cd40.jpg","242224198911437.6657b2342b91a.jpg","159607198911437.6657b2342e020.jpg","e6c878198911437.6657b23429fa5.jpg","237575198911437.6657b2342af2e.jpg","861895198911437.6657b23430a81.jpg","97771e198911437.6657b23429579.jpg","98fd92198911437.6657b2342a77c.jpg","453692198911437.6657b2342d20d.jpg","b49d30198911437.6657b2342fb4b.jpg","1430a3198911437.6657b2342c0d6.jpg","0ca882198911437.6657b25d59975.jpg"],"200164623":["542bb8200164623.665e09ab3d444.jpg","9bc60c200164623.665e09aa43b30.jpg","d6be22200164623.665e09aa42f7e.jpg","1afff9200164623.665e09aa426dc.jpg","89c7bc200164623.665e09ab3c811.jpg","6d8401200164623.665e0e7223224.jpg","da1c9f200164623.665e0e72220c5.jpg","8b894c200164623.665e0e7222a59.jpg","d55941200164623.665e09ab3cf8b.jpg","0d2413200164623.6664eb82c24a1.jpg","63f1b1200164623.665e0e7338a7e.jpg","5dcaf5200164623.665e0e7339188.jpg","6640f5200164623.665e0e74c89a1.jpg","3b2e12200164623.665e0e74c9a43.jpg","84d292200164623.665e0e74c9582.jpg","6bcc31200164623.665e0e74c827f.jpg","a960ed200164623.665e0e74c742e.jpg","398eef200164623.665e0e74ca132.jpg","cc7057200164623.665e0e74ca865.jpg","3b970e200164623.665e0e74cb6b9.jpg","d5b980200164623.665e0e74caf94.jpg","07c092200164623.665e0e74c90df.jpg","d060a3200164623.665e0e74c7b57.jpg","c706bb200164623.665e0e74cbb7a.jpg"],"200564109":["5c4779200564109.66647b0022953.jpg","95943c200564109.66647afe92a64.jpg","684a33200564109.66647afe919ca.jpg","afdb3f200564109.66647afe92243.jpg","e913f2200564109.66647b0023ba1.jpg","626529200564109.66647b00236a3.jpg","5ba27e200564109.66647aff5c862.jpg","8fe5fb200564109.66647aff5d257.jpg","b0dd4f200564109.66647b002319e.jpg"],"202099973":["6e313a202099973.66800fe76072b.jpg","895273202099973.66800fe761c4f.jpg","9a827d202099973.66800fe760c04.jpg","fa3490202099973.66800fe76149c.jpg","00fd79202099973.66800fe761013.jpg","e0705c202099973.66800fe760252.jpg","3bbd9f202099973.66800fe95ee69.jpg","810c6e202099973.66800fe961fb2.jpg","e965b5202099973.66800fe96277f.jpg","03a309202099973.66800fe95da1e.jpg","7bc439202099973.66800fe962ea9.jpg","f56f45202099973.66800fe95f569.jpg","5d95fe202099973.66800fe96386c.jpg","49f7d8202099973.66800fe960e47.jpg","85fa8e202099973.66800fe95fc66.jpg","2f7b00202099973.66800fe95d44a.jpg","017a46202099973.66800fe96043d.jpg","b11c49202099973.66800fe961872.jpg","21f92d202099973.66800fe95e408.jpg","b20b50202099973.66800feb4460f.jpg","627983202099973.66800feb452fe.jpg","45c265202099973.66800feb44d57.jpg","390747202099973.66800fec624fc.jpg","7b8496202099973.66800fec60e8e.jpg","8b9aa3202099973.66800fec6179d.jpg","47e4ec202099973.66800fec61ddf.jpg","b746d4202099973.66800fec62d2f.jpg","c30db3202099973.66800fec6336c.jpg","c8a7d7202099973.66800fec63c15.jpg"],"203233227":["b2966c203233227.6693ea8ceedb9.jpg","86bd6f203233227.6693ea8cef5f8.jpg","9e7261203233227.6693ea8cf35fc.jpg","c3d21f203233227.6693ea8cf401e.jpg","f4a261203233227.6693ea8cf1d01.jpg","19e809203233227.6693ea8cf151f.jpg","30d0d1203233227.6693ea8d01fab.jpg","81d6c1203233227.6693ea8d02bf9.jpg","b4ffa5203233227.6693ea8cf2a2e.jpg","9a8ee8203233227.6693ea8cefe87.jpg","9f5089203233227.6693ea8d0087e.jpg","d2ee48203233227.6693ea8d011a2.jpg","a86035203233227.6693ea8d025ba.jpg","d13baf203233227.6693ea8d01a70.jpg"],"206994447":["c41ecf206994447.66d624c334064.jpg","10fc36206994447.66d624c335428.jpg","b93819206994447.66d624c334eb4.jpg","0258bf206994447.66d624c334638.jpg","c0edab206994447.66d624c547ba7.jpg","62144d206994447.66d624c548f57.jpg","9413e3206994447.66d624c548631.jpg","4cf71d206994447.66d624c54664f.jpg","432597206994447.66d624c5499a6.jpg","75bd85206994447.66d624c545d45.jpg","d5f58c206994447.66d624c54711e.jpg","4d1b03206994447.66d624c73eabd.jpg","7d630d206994447.66d624c73f2fa.jpg","c2d92c206994447.66d624c73fbe6.jpg","cb41a1206994447.66d624c987140.jpg","9d6b39206994447.66d624c98472c.jpg","66956d206994447.66d624c98839f.jpg","f5320f206994447.66d624c9855cd.jpg","834773206994447.66d624c988caa.jpg","34c6ea206994447.66d624c9833ba.jpg","046425206994447.66d624c983dc3.jpg","e95881206994447.66d624c982b98.jpg","fcc995206994447.66d624c981c18.jpg","dbbac7206994447.66d624c987a76.jpg","482411206994447.66d624c98234b.jpg","531e5d206994447.66d624c98164d.jpg","c18f8e206994447.66d6292ed4398.jpg","19e58d206994447.66d6292ed3a20.jpg","5cca0f206994447.66d624cd03990.jpg","b87740206994447.66d624cd042ed.jpg","957e6f206994447.66d624cd02c71.jpg","e3717d206994447.66d624cd02385.jpg","075523206994447.66d624cd032d8.jpg","c322e5206994447.66d62930628ce.jpg","99d5a3206994447.66d6293063173.jpg","548d72206994447.66d629306195a.jpg","089ab1206994447.66d62930622fe.jpg","ea0e11206994447.66d62939a971d.jpg","dfd1c4206994447.66d62933060ff.jpg","4d6ba3206994447.66d6293305867.jpg","1433b7206994447.66d629360c400.jpg","ebb9aa206994447.66d629360b5a4.jpg","4f1f6b206994447.66d629360ad5b.jpg","49314a206994447.66d629360a3d2.jpg","b94a12206994447.66d629360bb30.jpg","f614c7206994447.66d6293609d2b.jpg","5a6c0c206994447.66d629360d0c9.jpg","b366c9206994447.66d629360ca40.jpg"],"208718869":["90e44c208718869.66f3666b70d1b.jpg","e70219208718869.66f36669d3cac.jpg","2805c3208718869.66f36669d58be.jpg","a2645a208718869.66f36669d4a42.jpg","4b6fb0208718869.66f36669d45ca.jpg","ed5cf9208718869.66f36669d525b.jpg","15700d208718869.66f36669d374f.jpg","ba4c71208718869.66f36669d4154.jpg","d72503208718869.66f36669d195e.jpg","5d8e93208718869.66f36669d2f30.jpg","b9d6b2208718869.66f36669d1f01.jpg","4f610c208718869.66f36669d26da.jpg"]};
+
+/* ---------- albums slider ---------- */
+(() => {
+  const rail = document.getElementById('rail');
+  const back = document.getElementById('albumsBack');
+  const titleEl = document.getElementById('albumsTitle'), metaEl = document.getElementById('albumsMeta');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ms = n => reduced ? 0 : n;
+
+  const phCache = {};
+  const ph = seed => phCache[seed] || (phCache[seed] = placeholder(seed));
+  const photosOf = (a, ai) => {
+    const files = a.behance ? (BEHANCE_PHOTOS[a.behance] || []) : (a.photos || []);
+    if (files.length) return files.map((f, k) => a.behance
+      ? { src: BEHANCE_CDN + 'max_1200/' + f, full: BEHANCE_CDN + 'fs/' + f, alt: `${a.title}, ${a.date}, photo ${k + 1}` }
+      : { src: `photos/albums/${a.folder}/${f}`, alt: `${a.title}, ${a.date}, photo ${k + 1}` });
+    return SHOW_PLACEHOLDERS ? Array.from({ length: 6 }, (_, k) => ({ src: ph(ai * 7 + k + 20), alt: '' })) : [];
+  };
+  const albums = ALBUMS.map((a, ai) => ({ ...a, list: photosOf(a, ai) })).filter(a => a.list.length);
+
+  const years = albums.map(a => +a.date.slice(-4));
+  const overviewMeta = `${albums.length} albums, ${Math.min(...years)} to ${Math.max(...years)}`;
+  let mode = 'overview', openIdx = -1, busy = false;
+
+  function setHead(title, meta, showBack) {
+    titleEl.textContent = title; metaEl.textContent = meta; back.hidden = !showBack;
+    if (!reduced) [titleEl, metaEl].forEach(el => el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 300, easing: 'ease-out' }));
+  }
+
+  function renderOverview() {
+    rail.innerHTML = '';
+    albums.forEach((a, i) => {
+      const b = document.createElement('button');
+      b.className = 'card'; b.dataset.i = i;
+      b.setAttribute('aria-label', `Open album: ${a.title}, ${a.date}, ${a.list.length} photos`);
+      b.innerHTML = `<span class="cover"><img alt="" draggable="false" loading="lazy"></span><span class="t"></span><span class="d"></span>`;
+      b.querySelector('img').src = a.list[0].src;
+      b.querySelector('.t').textContent = a.title; b.querySelector('.d').textContent = a.date;
+      b.addEventListener('click', () => { if (!dragged) openAlbum(i); });
+      rail.appendChild(b);
+    });
+  }
+
+  function renderAlbum(i) {
+    rail.innerHTML = '';
+    albums[i].list.forEach((p, k) => {
+      const fig = document.createElement('figure');
+      fig.className = 'shot'; fig.tabIndex = 0; fig.setAttribute('role', 'button');
+      fig.setAttribute('aria-label', `Open photo ${k + 1} of ${albums[i].list.length}`);
+      const img = new Image(); img.alt = p.alt; img.draggable = false; if (k > 3) img.loading = 'lazy'; img.src = p.src;
+      fig.appendChild(img);
+      const big = { src: p.full || p.src, alt: p.alt };
+      fig.addEventListener('click', () => { if (!dragged) openPhoto(big); });
+      fig.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPhoto(big); } });
+      rail.appendChild(fig);
+    });
+  }
+
+  // Open an album: other covers drop away, the chosen cover grows into the first photo,
+  // and the rest of the album slides in from the right.
+  async function openAlbum(i) {
+    if (busy || mode !== 'overview') return; busy = true;
+    const cards = [...rail.children], card = cards[i];
+    const from = card.querySelector('.cover').getBoundingClientRect();
+    await Promise.all(cards.map(c => {
+      if (c === card) return c.querySelectorAll('.t,.d').forEach(el => el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms(160), fill: 'forwards' })) || Promise.resolve();
+      const dist = Math.abs(+c.dataset.i - i);
+      return c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(18px) scale(.96)' }],
+        { duration: ms(240), delay: ms(Math.min(dist, 6) * 30), easing: 'ease-in', fill: 'forwards' }).finished;
+    }));
+    renderAlbum(i); rail.scrollLeft = 0; mode = 'album'; openIdx = i;
+    setHead(albums[i].title, `${albums[i].date}, ${albums[i].list.length} photos`, true);
+    const shots = [...rail.children], first = shots[0], to = first.getBoundingClientRect();
+    const s = from.height / to.height;
+    first.animate([
+      { transformOrigin: '0 0', transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${s})`, clipPath: `inset(0 ${Math.max(0, 100 - (from.width / s) / to.width * 100)}% 0 0 round 4px)` },
+      { transformOrigin: '0 0', transform: 'none', clipPath: 'inset(0 0% 0 0 round 4px)' }
+    ], { duration: ms(560), easing: 'cubic-bezier(.2,.8,.2,1)' });
+    shots.slice(1).forEach((el, k) => el.animate([{ opacity: 0, transform: 'translateX(90px)' }, { opacity: 1, transform: 'none' }],
+      { duration: ms(520), delay: ms(140 + k * 70), easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+    setTimeout(() => { busy = false; back.focus({ preventScroll: true }); }, ms(500));
+  }
+
+  // Back to the overview: photos slide out, covers come back in around the album you left.
+  async function closeAlbum() {
+    if (busy || mode !== 'album') return; busy = true;
+    await Promise.all([...rail.children].map((el, k) => el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-40px)' }],
+      { duration: ms(220), delay: ms(Math.min(k, 6) * 30), easing: 'ease-in', fill: 'forwards' }).finished));
+    renderOverview(); mode = 'overview';
+    const card = rail.children[openIdx];
+    rail.scrollLeft = Math.max(0, card.offsetLeft - rail.offsetLeft - parseFloat(getComputedStyle(rail).paddingLeft));
+    setHead('Albums', overviewMeta, false);
+    [...rail.children].forEach((c, k) => c.animate([{ opacity: 0, transform: 'translateY(18px) scale(.96)' }, { opacity: 1, transform: 'none' }],
+      { duration: ms(420), delay: ms(Math.min(Math.abs(k - openIdx), 8) * 45), easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+    setTimeout(() => { busy = false; card.focus({ preventScroll: true }); }, ms(420));
+  }
+
+  back.addEventListener('click', closeAlbum);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && mode === 'album' && !lightbox.open) closeAlbum(); });
+
+  // Arrow buttons page the slider.
+  document.getElementById('railPrev').addEventListener('click', () => rail.scrollBy({ left: -rail.clientWidth * 0.8, behavior: reduced ? 'auto' : 'smooth' }));
+  document.getElementById('railNext').addEventListener('click', () => rail.scrollBy({ left: rail.clientWidth * 0.8, behavior: reduced ? 'auto' : 'smooth' }));
+
+  // Click-and-drag scrolling with a mouse (touch screens scroll natively).
+  let down = false, dragged = false, sx = 0, sl = 0, vx = 0, lx = 0, lt = 0;
+  rail.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;
+    down = true; dragged = false; sx = lx = e.clientX; sl = rail.scrollLeft; lt = performance.now(); vx = 0;
+  });
+  addEventListener('pointermove', e => {
+    if (!down) return;
+    if (!dragged && Math.abs(e.clientX - sx) > 6) { dragged = true; rail.classList.add('dragging'); }
+    if (dragged) {
+      rail.scrollLeft = sl - (e.clientX - sx);
+      const now = performance.now(); vx = (e.clientX - lx) / Math.max(1, now - lt); lx = e.clientX; lt = now;
+    }
+  });
+  addEventListener('pointerup', () => {
+    if (!down) return; down = false;
+    if (dragged) {
+      // A little glide after letting go, then snap back on.
+      let v = vx * 16;
+      const glide = () => { if (Math.abs(v) < 0.5) { rail.classList.remove('dragging'); return; } rail.scrollLeft -= v; v *= 0.92; requestAnimationFrame(glide); };
+      reduced ? rail.classList.remove('dragging') : requestAnimationFrame(glide);
+      setTimeout(() => { dragged = false; }, 0);
+    }
+  });
+
+  renderOverview(); setHead('Albums', overviewMeta, false);
+})();
+</script>
+</body>
+</html>
